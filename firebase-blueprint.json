@@ -1,0 +1,355 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Registered user role and preference profile isolated to the account owner.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["patient", "hospital"],
+          "maxLength": 20
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "enum": ["en", "hi", "hinglish", "auto"],
+          "maxLength": 20
+        },
+        "hospitalName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "role", "displayName", "preferredLanguage", "createdAt", "updatedAt"]
+    },
+    "Hospital": {
+      "title": "Hospital",
+      "description": "Public hospital directory entry managed by a hospital member.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "address": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 240
+        },
+        "helpdeskPhone": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "departments": {
+          "type": "array",
+          "description": "Up to 20 department names offered by the hospital."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "ownerUid", "name", "city", "address", "helpdeskPhone", "departments", "createdAt", "updatedAt"]
+    },
+    "Doctor": {
+      "title": "Doctor",
+      "description": "Doctor profile and exact physical room/wayfinding instructions inside a hospital.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "hospitalId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "specialty": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "qualifications": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "floorWing": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "roomNumber": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "directionsNote": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 260
+        },
+        "languages": {
+          "type": "array",
+          "description": "Up to 10 languages spoken by this doctor."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "hospitalId", "ownerUid", "name", "specialty", "qualifications", "floorWing", "roomNumber", "directionsNote", "languages", "createdAt", "updatedAt"]
+    },
+    "MeetingSlot": {
+      "title": "MeetingSlot",
+      "description": "Doctor meeting time slot managed by hospital staff and bookable by patients.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "hospitalId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "doctorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "doctorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "specialty": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "roomLocation": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 180
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "date": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "timeLabel": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 50
+        },
+        "status": {
+          "type": "string",
+          "enum": ["available", "booked"],
+          "maxLength": 20
+        },
+        "lastAppointmentId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "hospitalId", "doctorId", "doctorName", "specialty", "roomLocation", "ownerUid", "date", "timeLabel", "status", "lastAppointmentId", "createdAt", "updatedAt"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Private booked appointment record accessible only to the patient and the hospital owner.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "patientUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "patientName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "hospitalId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "hospitalName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "hospitalOwnerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "doctorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "doctorName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "specialty": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "roomLocation": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 180
+        },
+        "slotId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "date": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 20
+        },
+        "timeLabel": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 50
+        },
+        "symptomSummary": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "status": {
+          "type": "string",
+          "enum": ["confirmed", "completed", "cancelled"],
+          "maxLength": 20
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "patientUid", "patientName", "hospitalId", "hospitalName", "hospitalOwnerUid", "doctorId", "doctorName", "specialty", "roomLocation", "slotId", "date", "timeLabel", "symptomSummary", "status", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User role registration and language preferences (owner-only read/write)."
+    },
+    "/hospitals/{hospitalId}": {
+      "schema": { "$ref": "#/entities/Hospital" },
+      "description": "Public hospital directory created and updated by hospital-role owners."
+    },
+    "/hospitals/{hospitalId}/doctors/{doctorId}": {
+      "schema": { "$ref": "#/entities/Doctor" },
+      "description": "Doctor profiles and room wayfinding details under a hospital."
+    },
+    "/hospitals/{hospitalId}/slots/{slotId}": {
+      "schema": { "$ref": "#/entities/MeetingSlot" },
+      "description": "Doctor meeting time slots under a hospital (no patient PII stored here)."
+    },
+    "/appointments/{appointmentId}": {
+      "schema": { "$ref": "#/entities/Appointment" },
+      "description": "Private patient bookings visible only to the patient or the hospital owner."
+    }
+  }
+}

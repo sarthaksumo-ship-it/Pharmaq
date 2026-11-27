@@ -1,0 +1,304 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 0: Default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Startup connection check document
+    match /test/connection {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
+    // Global hardened helpers
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isHospitalMember() {
+      return isVerifiedUser()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'hospital';
+    }
+
+    function isHospitalOwner(hospitalId) {
+      return isVerifiedUser()
+        && exists(/databases/$(database)/documents/hospitals/$(hospitalId))
+        && get(/databases/$(database)/documents/hospitals/$(hospitalId)).data.ownerUid == request.auth.uid;
+    }
+
+    // Entity validation blueprints
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'role', 'displayName', 'preferredLanguage', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'role', 'displayName', 'preferredLanguage', 'hospitalName', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.uid == request.auth.uid
+        && data.role is string && data.role in ['patient', 'hospital']
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100
+        && data.preferredLanguage is string && data.preferredLanguage in ['en', 'hi', 'hinglish', 'auto']
+        && (!('hospitalName' in data) || (data.hospitalName is string && data.hospitalName.size() <= 120))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidHospital(data) {
+      return data.keys().hasAll(['id', 'ownerUid', 'name', 'city', 'address', 'helpdeskPhone', 'departments', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'ownerUid', 'name', 'city', 'address', 'helpdeskPhone', 'departments', 'createdAt', 'updatedAt'])
+        && isValidId(data.id)
+        && isValidId(data.ownerUid)
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 120
+        && data.city is string && data.city.size() >= 2 && data.city.size() <= 80
+        && data.address is string && data.address.size() >= 4 && data.address.size() <= 240
+        && data.helpdeskPhone is string && data.helpdeskPhone.size() <= 40
+        && data.departments is list && data.departments.size() <= 20
+        && (data.departments.size() == 0 || data.departments[0] is string)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidDoctor(data) {
+      return data.keys().hasAll(['id', 'hospitalId', 'ownerUid', 'name', 'specialty', 'qualifications', 'floorWing', 'roomNumber', 'directionsNote', 'languages', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'hospitalId', 'ownerUid', 'name', 'specialty', 'qualifications', 'floorWing', 'roomNumber', 'directionsNote', 'languages', 'createdAt', 'updatedAt'])
+        && isValidId(data.id)
+        && isValidId(data.hospitalId)
+        && isValidId(data.ownerUid)
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 100
+        && data.specialty is string && data.specialty.size() >= 2 && data.specialty.size() <= 80
+        && data.qualifications is string && data.qualifications.size() <= 100
+        && data.floorWing is string && data.floorWing.size() >= 1 && data.floorWing.size() <= 80
+        && data.roomNumber is string && data.roomNumber.size() >= 1 && data.roomNumber.size() <= 40
+        && data.directionsNote is string && data.directionsNote.size() >= 2 && data.directionsNote.size() <= 260
+        && data.languages is list && data.languages.size() <= 10
+        && (data.languages.size() == 0 || data.languages[0] is string)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMeetingSlot(data) {
+      return data.keys().hasAll(['id', 'hospitalId', 'doctorId', 'doctorName', 'specialty', 'roomLocation', 'ownerUid', 'date', 'timeLabel', 'status', 'lastAppointmentId', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'hospitalId', 'doctorId', 'doctorName', 'specialty', 'roomLocation', 'ownerUid', 'date', 'timeLabel', 'status', 'lastAppointmentId', 'createdAt', 'updatedAt'])
+        && isValidId(data.id)
+        && isValidId(data.hospitalId)
+        && isValidId(data.doctorId)
+        && isValidId(data.ownerUid)
+        && data.doctorName is string && data.doctorName.size() >= 2 && data.doctorName.size() <= 100
+        && data.specialty is string && data.specialty.size() >= 2 && data.specialty.size() <= 80
+        && data.roomLocation is string && data.roomLocation.size() >= 2 && data.roomLocation.size() <= 180
+        && data.date is string && data.date.size() >= 8 && data.date.size() <= 20
+        && data.timeLabel is string && data.timeLabel.size() >= 3 && data.timeLabel.size() <= 50
+        && data.status is string && data.status in ['available', 'booked']
+        && data.lastAppointmentId is string && data.lastAppointmentId.size() <= 128
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAppointment(data) {
+      return data.keys().hasAll(['id', 'patientUid', 'patientName', 'hospitalId', 'hospitalName', 'hospitalOwnerUid', 'doctorId', 'doctorName', 'specialty', 'roomLocation', 'slotId', 'date', 'timeLabel', 'symptomSummary', 'status', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'patientUid', 'patientName', 'hospitalId', 'hospitalName', 'hospitalOwnerUid', 'doctorId', 'doctorName', 'specialty', 'roomLocation', 'slotId', 'date', 'timeLabel', 'symptomSummary', 'status', 'createdAt', 'updatedAt'])
+        && isValidId(data.id)
+        && isValidId(data.patientUid)
+        && isValidId(data.hospitalId)
+        && isValidId(data.hospitalOwnerUid)
+        && isValidId(data.doctorId)
+        && isValidId(data.slotId)
+        && data.patientName is string && data.patientName.size() >= 1 && data.patientName.size() <= 100
+        && data.hospitalName is string && data.hospitalName.size() >= 2 && data.hospitalName.size() <= 120
+        && data.doctorName is string && data.doctorName.size() >= 2 && data.doctorName.size() <= 100
+        && data.specialty is string && data.specialty.size() >= 2 && data.specialty.size() <= 80
+        && data.roomLocation is string && data.roomLocation.size() >= 2 && data.roomLocation.size() <= 180
+        && data.date is string && data.date.size() >= 8 && data.date.size() <= 20
+        && data.timeLabel is string && data.timeLabel.size() >= 3 && data.timeLabel.size() <= 50
+        && data.symptomSummary is string && data.symptomSummary.size() <= 300
+        && data.status is string && data.status in ['confirmed', 'completed', 'cancelled']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 1. User profiles (strictly owner-isolated PII)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+      allow create: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['role', 'displayName', 'preferredLanguage', 'hospitalName', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // 2. Public Hospital Directory (no patient PII)
+    match /hospitals/{hospitalId} {
+      allow get: if isValidId(hospitalId);
+      allow list: if true;
+      allow create: if isValidId(hospitalId)
+        && isVerifiedUser()
+        && isValidHospital(incoming())
+        && incoming().id == hospitalId
+        && incoming().ownerUid == request.auth.uid
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && isHospitalMember();
+      allow update: if isValidId(hospitalId)
+        && isVerifiedUser()
+        && isValidHospital(incoming())
+        && existing().ownerUid == request.auth.uid
+        && incoming().id == existing().id
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'city', 'address', 'helpdeskPhone', 'departments', 'updatedAt']);
+      allow delete: if isValidId(hospitalId)
+        && isVerifiedUser()
+        && existing().ownerUid == request.auth.uid;
+
+      // 3. Doctors subcollection (Master Gate checks parent hospital)
+      match /doctors/{doctorId} {
+        allow get: if isValidId(hospitalId) && isValidId(doctorId);
+        allow list: if isValidId(hospitalId);
+        allow create: if isValidId(hospitalId) && isValidId(doctorId)
+          && isVerifiedUser()
+          && isValidDoctor(incoming())
+          && incoming().id == doctorId
+          && incoming().hospitalId == hospitalId
+          && incoming().ownerUid == request.auth.uid
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && isHospitalOwner(hospitalId);
+        allow update: if isValidId(hospitalId) && isValidId(doctorId)
+          && isVerifiedUser()
+          && isValidDoctor(incoming())
+          && existing().ownerUid == request.auth.uid
+          && incoming().id == existing().id
+          && incoming().hospitalId == existing().hospitalId
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'specialty', 'qualifications', 'floorWing', 'roomNumber', 'directionsNote', 'languages', 'updatedAt'])
+          && isHospitalOwner(hospitalId);
+        allow delete: if isValidId(hospitalId) && isValidId(doctorId)
+          && isVerifiedUser()
+          && existing().ownerUid == request.auth.uid
+          && isHospitalOwner(hospitalId);
+      }
+
+      // 4. Doctor Meeting Slots (Master Gate + Atomic Patient Booking)
+      match /slots/{slotId} {
+        allow get: if isValidId(hospitalId) && isValidId(slotId);
+        allow list: if isValidId(hospitalId);
+        allow create: if isValidId(hospitalId) && isValidId(slotId)
+          && isVerifiedUser()
+          && isValidMeetingSlot(incoming())
+          && incoming().id == slotId
+          && incoming().hospitalId == hospitalId
+          && incoming().ownerUid == request.auth.uid
+          && incoming().status == 'available'
+          && incoming().lastAppointmentId == ''
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && isHospitalOwner(hospitalId)
+          && exists(/databases/$(database)/documents/hospitals/$(hospitalId)/doctors/$(incoming().doctorId));
+        allow update: if isValidId(hospitalId) && isValidId(slotId)
+          && isVerifiedUser()
+          && isValidMeetingSlot(incoming())
+          && incoming().id == existing().id
+          && incoming().hospitalId == existing().hospitalId
+          && incoming().doctorId == existing().doctorId
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            // Action A: Hospital owner updates slot time/location or reopens slot
+            (existing().ownerUid == request.auth.uid
+              && incoming().diff(existing()).affectedKeys().hasOnly(['date', 'timeLabel', 'roomLocation', 'status', 'lastAppointmentId', 'updatedAt'])
+              && isHospitalOwner(hospitalId))
+            ||
+            // Action B: Patient atomically books an available slot alongside creating their appointment
+            (existing().status == 'available'
+              && incoming().status == 'booked'
+              && isValidId(incoming().lastAppointmentId)
+              && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'lastAppointmentId', 'updatedAt'])
+              && existsAfter(/databases/$(database)/documents/appointments/$(incoming().lastAppointmentId))
+              && getAfter(/databases/$(database)/documents/appointments/$(incoming().lastAppointmentId)).data.patientUid == request.auth.uid
+              && getAfter(/databases/$(database)/documents/appointments/$(incoming().lastAppointmentId)).data.slotId == slotId)
+          );
+        allow delete: if isValidId(hospitalId) && isValidId(slotId)
+          && isVerifiedUser()
+          && existing().ownerUid == request.auth.uid
+          && isHospitalOwner(hospitalId);
+      }
+    }
+
+    // 5. Private Patient Appointments (PII isolated to patient & hospital owner)
+    match /appointments/{appointmentId} {
+      allow get: if isValidId(appointmentId)
+        && isVerifiedUser()
+        && (existing().patientUid == request.auth.uid || existing().hospitalOwnerUid == request.auth.uid);
+      allow list: if isVerifiedUser()
+        && (resource.data.patientUid == request.auth.uid || resource.data.hospitalOwnerUid == request.auth.uid);
+      allow create: if isValidId(appointmentId)
+        && isVerifiedUser()
+        && isValidAppointment(incoming())
+        && incoming().id == appointmentId
+        && incoming().patientUid == request.auth.uid
+        && incoming().status == 'confirmed'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/hospitals/$(incoming().hospitalId)/slots/$(incoming().slotId))
+        && get(/databases/$(database)/documents/hospitals/$(incoming().hospitalId)/slots/$(incoming().slotId)).data.status == 'available'
+        && get(/databases/$(database)/documents/hospitals/$(incoming().hospitalId)/slots/$(incoming().slotId)).data.ownerUid == incoming().hospitalOwnerUid
+        && getAfter(/databases/$(database)/documents/hospitals/$(incoming().hospitalId)/slots/$(incoming().slotId)).data.status == 'booked'
+        && getAfter(/databases/$(database)/documents/hospitals/$(incoming().hospitalId)/slots/$(incoming().slotId)).data.lastAppointmentId == appointmentId;
+      allow update: if isValidId(appointmentId)
+        && isVerifiedUser()
+        && isValidAppointment(incoming())
+        && existing().status == 'confirmed'
+        && incoming().id == existing().id
+        && incoming().patientUid == existing().patientUid
+        && incoming().hospitalId == existing().hospitalId
+        && incoming().hospitalOwnerUid == existing().hospitalOwnerUid
+        && incoming().doctorId == existing().doctorId
+        && incoming().slotId == existing().slotId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          (existing().patientUid == request.auth.uid
+            && incoming().status == 'cancelled'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+          ||
+          (existing().hospitalOwnerUid == request.auth.uid
+            && incoming().status in ['completed', 'cancelled']
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+        );
+      allow delete: if false;
+    }
+  }
+}

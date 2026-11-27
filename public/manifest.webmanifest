@@ -1,0 +1,21 @@
+{
+  "name": "Pharmer — Precision Guidance",
+  "short_name": "Pharmer",
+  "description": "Precision Guidance for patient symptom precautions, hospital doctor wayfinding, appointment booking, and medical report clarity.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F3EFE6",
+  "theme_color": "#2864A0",
+  "icons": [
+    {
+      "src": "/assets/favicon-64.png",
+      "sizes": "64x64",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/pharmer-favicon.png",
+      "sizes": "320x320",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Pharmer",
+  "description": "Pharmer — Precision Guidance. Accessible healthcare companion, hospital doctor wayfinding, appointment booking, and plain-language medical report guidance.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

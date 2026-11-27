@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+
+    /* Official Pharmer Brand Tokens sampled from the approved logo */
+    --pharmer-cream: #F3EFE6;
+    --pharmer-cream-soft: #FAF7F0;
+    --pharmer-border: #E2DCD0;
+    --pharmer-ink: #1F1B18;
+    --pharmer-muted: #5A564E;
+    --pharmer-blue: #2864A0;
+    --pharmer-blue-hover: #1E5082;
+    --pharmer-orange: #D78728;
+    --pharmer-orange-ink: #9A550C;
+    --pharmer-green: #267D40;
+  }
+
+  html {
+    font-family: var(--font-body);
+    background-color: var(--pharmer-cream);
+    color: var(--pharmer-ink);
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}
+
+@keyframes pharmerWavePulse {
+  0%, 100% {
+    transform: scaleY(0.35);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.pharmer-wave-bar {
+  transform-origin: center;
+  animation: pharmerWavePulse 0.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .pharmer-wave-bar {
+    animation: none;
+    transform: scaleY(0.7);
+  }
+}
+
